@@ -5,24 +5,25 @@ import boto3
 import json
 
 session = boto3.Session(profile_name = "AdministratorAccess-376129873205")
-
-# ### Setup the Bedrock runtime
 bedrock_runtime = session.client('bedrock-runtime', region_name='us-east-1')
 
+# Para mantener el historial de la conversación
+historia = []
+
 print("\n*** Bienvenido a Marcos GPT ***")
+print("\n¿En qué puedo ayudarte hoy?")
 
-def menuPrincipal():
-    while True:
+def chat():
+    try:
+        while True:
+            prompt = input("\n>> ")
 
-        print("\nMenú principal")
-        print("1) Realizar una pregunta")
-        print("2) Salir del programa")
-
-        opcionElegida = input("\nSeleccione una opción: ")
-
-        if opcionElegida == "1" :
-                
-            prompt = input("\n¿En qué puedo ayudarte?\n\n>> ")
+            if prompt.lower() in ["salir", "exit", "quit"]:
+                print("\nMuchas gracias por usar este servicio\n")
+                break
+            
+            # Guardamos la historia
+            historia.append({"role": "user", "content": prompt})
 
             # ### Generation Configuration
             kwargs = {
@@ -31,7 +32,7 @@ def menuPrincipal():
                 "accept": "*/*",
                 "body": json.dumps(
                     {
-                        "inputText": prompt,
+                        "inputText": "\n".join([f"{h['role']}: {h['content']}" for h in historia]),
                         "textGenerationConfig": {
                             "maxTokenCount": 200,
                             "temperature": 0,
@@ -48,16 +49,15 @@ def menuPrincipal():
             response_body = json.loads(response.get('body').read())
             generation = response_body['results'][0]['outputText']
 
-            print(f"\n{generation}\n")
+            historia.append({"role": "assistant", "content": generation})  # Guardamos la respuesta
 
-        elif opcionElegida == "2":
-            print("\nMuchas gracias por usar este servicio\n")
-            break
-        else:
-            print("\nOpción no valida. Intente de nuevo.")
+            print(f"\nMarcos GPT: {generation}\n")
+
+    except KeyboardInterrupt:
+        print("\nMuchas gracias por usar este servicio\n")
 
 # Llamamos a la función para iniciar el programa
-menuPrincipal()
+chat()
 
 
 
